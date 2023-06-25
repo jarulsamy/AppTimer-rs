@@ -1,4 +1,4 @@
-// #![windows_subsystem = "windows"]
+#![windows_subsystem = "windows"]
 
 extern crate native_windows_derive as nwd;
 extern crate native_windows_gui as nwg;
@@ -223,13 +223,19 @@ fn main() {
             elapsed_seconds.num_seconds().to_string(),
             username,
         ])
-        .unwrap();
+        .unwrap_or_else(|err| {
+            error!("Failed to write result to CSV. {}", err);
+            exit(1);
+        });
 
     let data = String::from_utf8(writer.into_inner().unwrap()).unwrap();
     let mut out_file = OpenOptions::new()
         .create(true)
         .append(true)
         .open(config.output_path)
-        .unwrap();
+        .unwrap_or_else(|err| {
+            error!("Failed to open output file. {}", err);
+            exit(1)
+        });
     out_file.write(data.as_bytes()).unwrap();
 }
