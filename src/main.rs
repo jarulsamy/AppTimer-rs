@@ -149,12 +149,22 @@ fn main() {
         fs::create_dir(conf_parent_dir).expect("Error creating default configuration");
     }
     let config = load_config(conf_file_path);
+    let log_file_path = match home::home_dir() {
+        Some(mut x) => {
+            x.push("AppData");
+            x.push("Roaming");
+            x.push("AppTimer");
+            x.push("AppTimer.log");
+            x
+        }
+        None => PathBuf::from("AppTimer.log"),
+    };
 
     let log_file = OpenOptions::new()
         .write(true)
         .append(true)
         .create(true)
-        .open("AppTimer.log")
+        .open(log_file_path)
         .unwrap();
     simplelog::CombinedLogger::init(vec![
         simplelog::TermLogger::new(
@@ -181,16 +191,6 @@ fn main() {
     });
     let username = get_username_dialog();
 
-    let mut app_path = config.app_path.clone();
-    let tmp = config.app_path.clone();
-    let mut args: Vec<&str> = tmp.split(" ").collect();
-    if args.len() > 1 {
-        app_path = args[0].to_string();
-        args = args[1..].to_vec();
-    } else {
-        args = Vec::new();
-    }
-
     let write_header = !config.output_path.is_file();
     let mut writer = Writer::from_writer(vec![]);
     if write_header {
@@ -205,11 +205,13 @@ fn main() {
     }
 
     let start = chrono::offset::Local::now();
+    let app_path = config.app_path.clone();
+    println!("{:?}", app_path);
     Command::new(app_path)
-        .args(args)
         .output()
         .unwrap_or_else(|err| {
-            error!("Failed to spawn subprocess. {}", err);
+            let path = config.app_path;
+            error!("Failed to spawn subprocess. ({})\n\t{}", path, err);
             exit(1);
         });
 
