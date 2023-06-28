@@ -198,7 +198,7 @@ fn main() {
             .write_record(&[
                 "startTimestamp",
                 "endTimestamp",
-                "elapsedSeconds",
+                "elapsedMinutes",
                 "username",
             ])
             .unwrap();
@@ -216,13 +216,15 @@ fn main() {
         });
 
     let end = chrono::offset::Local::now();
-    let elapsed_seconds = end - start;
+    let elapsed = end - start;
+    let start_str = start.to_rfc3339();
+    let end_str = end.to_rfc3339();
 
     writer
         .write_record(&[
-            start.timestamp().to_string(),
-            end.timestamp().to_string(),
-            elapsed_seconds.num_seconds().to_string(),
+            start_str.to_string(),
+            end_str.to_string(),
+            elapsed.num_minutes().to_string(),
             username,
         ])
         .unwrap_or_else(|err| {
